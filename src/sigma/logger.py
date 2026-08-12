@@ -2,7 +2,7 @@ import logging
 import os
 import structlog
 from logging.handlers import RotatingFileHandler
-from config import settings
+from sigma.config import settings
 
 def setup_logger():
     os.makedirs('logs', exist_ok=True)

@@ -4,7 +4,7 @@ import time
 from typing import Optional
 
 import yfinance as yf
-from logger import get_logger
+from sigma.logger import get_logger
 logger = get_logger(__name__)
 
 class FetchError(Exception):
@@ -95,7 +95,7 @@ async def fetch_ticker(symbol: str) -> dict:
 
 if __name__ == '__main__':
     import asyncio
-    from logger import setup_logger
+    from sigma.logger import setup_logger
     import logging
     logging.getLogger("yfinance").setLevel(logging.ERROR)
 

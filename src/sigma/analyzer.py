@@ -5,8 +5,8 @@ from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types
 
-from config import settings
-from logger import get_logger
+from sigma.config import settings
+from sigma.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -140,8 +140,8 @@ async def analyze_ticker(data: dict) -> str:
 
 if __name__ == '__main__':
     import asyncio
-    from logger import setup_logger
-    from fetcher import fetch_ticker
+    from sigma.logger import setup_logger
+    from sigma.fetcher import fetch_ticker
 
     setup_logger()
     async def test():

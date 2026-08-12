@@ -1,8 +1,8 @@
 from telegram.ext import Application,CommandHandler,MessageHandler,filters
-from config import settings
-from logger import setup_logger
+from sigma.config import settings
+from sigma.logger import setup_logger
 
-from bot import (
+from sigma.bot import (
     start_handler,
     help_handler,
     price_handler,

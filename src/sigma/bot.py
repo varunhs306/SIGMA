@@ -8,16 +8,16 @@ from telegram.ext import (
     filters,
 )
 
-from config import settings
-from logger import get_logger
-from fetcher import (
+from sigma.config import settings
+from sigma.logger import get_logger
+from sigma.fetcher import (
     fetch_ticker,
     FetchError,
     InvalidTickerError,
     RateLimitError,
 )
 import telegramify_markdown
-from analyzer import analyze_ticker, AnalysisError, GeminiRateLimitError
+from sigma.analyzer import analyze_ticker, AnalysisError, GeminiRateLimitError
 
 logger = get_logger(__name__)
 
