@@ -2,17 +2,18 @@ import logging
 import os
 import structlog
 from logging.handlers import RotatingFileHandler
-from sigma.config import settings
+from sigma.config import get_settings
 
 def setup_logger():
-    os.makedirs('logs', exist_ok=True)
+    settings = get_settings()
+    settings.log_file.parent.mkdir(parents=True, exist_ok=True)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
 
     file_handler = RotatingFileHandler(
-        "logs/sage.log",
-        maxBytes=5* 1024 *1024,
-        backupCount=3
+        settings.log_file,
+        maxBytes=settings.log_max_bytes,
+        backupCount=settings.log_backup_count,
     )
     file_handler.setLevel(logging.DEBUG)
 
@@ -26,7 +27,7 @@ def setup_logger():
     file_handler.setFormatter(file_formatter)
 
     rootlogger = logging.getLogger()
-    rootlogger.setLevel(getattr(logging, settings.log_level.upper()))
+    rootlogger.setLevel(settings.log_level)
     rootlogger.addHandler(console_handler)
     rootlogger.addHandler(file_handler)
 

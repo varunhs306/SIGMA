@@ -5,6 +5,7 @@ from typing import Optional
 
 import yfinance as yf
 from sigma.logger import get_logger
+from sigma.config import get_settings
 logger = get_logger(__name__)
 
 class FetchError(Exception):
@@ -23,7 +24,7 @@ async def _fetch_from_yfinance(symbol: str) -> tuple:
     def blocking_fetch():
         ticker = yf.Ticker(symbol)
         info = ticker.info
-        history = ticker.history(period='1mo')
+        history = ticker.history(period=get_settings().history_period)
         return info,history
     
     return await loop.run_in_executor(None,blocking_fetch)

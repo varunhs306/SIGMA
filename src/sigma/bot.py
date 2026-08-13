@@ -8,7 +8,7 @@ from telegram.ext import (
     filters,
 )
 
-from sigma.config import settings
+from sigma.config import get_settings
 from sigma.logger import get_logger
 from sigma.fetcher import (
     fetch_ticker,
@@ -30,13 +30,15 @@ def fmt(val,prefix='',suffix='',decimals=2):
         return f"{prefix}{val:,}{suffix}"
     return f"{prefix}{val}{suffix}"
 
+TRILLION = 1_000_000_000_000
+BILLION = 1_000_000_000
 def  fmt_market_cap(market_cap):
     if market_cap is None:
         return 'N/A'
-    if market_cap >= 1_000_000_000_000:
-        return f"${market_cap/1_000_000_000_000:.2f}T"
-    if market_cap >= 1_000_000_000:
-        return f"${market_cap/1_000_000_000:.2f}B"
+    if market_cap >= TRILLION:
+        return f"${market_cap/TRILLION:.2f}T"
+    if market_cap >= BILLION:
+        return f"${market_cap/BILLION:.2f}B"
     return f"${market_cap:,}"
 def fmt_change(change):
     if change is None:
