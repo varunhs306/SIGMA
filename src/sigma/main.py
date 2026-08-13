@@ -1,5 +1,5 @@
 from telegram.ext import Application,CommandHandler,MessageHandler,filters
-from sigma.config import settings
+from sigma.config import get_settings
 from sigma.logger import setup_logger
 
 from sigma.bot import (
@@ -13,8 +13,9 @@ from sigma.bot import (
 
 def main():
     setup_logger()
+    settings = get_settings()
 
-    app = Application.builder().token(settings.telegram_bot_token).build()
+    app = Application.builder().token(settings.telegram_bot_token.get_secret_value()).build()
 
     app.add_handler(CommandHandler('start', start_handler))
     app.add_handler(CommandHandler('help', help_handler))

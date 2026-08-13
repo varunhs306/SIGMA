@@ -5,8 +5,9 @@ from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types
 
-from sigma.config import settings
+from sigma.config import get_settings
 from sigma.logger import get_logger
+from functools import lru_cache
 
 logger = get_logger(__name__)
 
@@ -19,7 +20,9 @@ class GeminiRateLimitError(AnalysisError):
 class GeminiUnavilableError(AnalysisError):
     """Gemini API returned a server error — safe to retry"""
 
-client = genai.Client(api_key=settings.gemini_api_key)
+@lru_cache(maxsize=1)
+def _get_client() -> genai.Client:
+    return genai.Client(api_key=get_settings().gemini_api_key.get_secret_value())
 
 
 GEN_CONFIG = types.GenerateContentConfig(
@@ -27,14 +30,21 @@ GEN_CONFIG = types.GenerateContentConfig(
     max_output_tokens=1024,
 )
 
-async def _call_gemini_with_retry(prompt: str, max_retries: int =3):
+async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
+    settings = get_settings()
+    max_retries = max_retries or settings.llm_max_retries
+    gen_config = types.GenerateContentConfig(
+        temperature=settings.llm_temperature,
+        max_output_tokens=settings.llm_max_output_tokens,
+    )
+
     last_exception = None
     for attempt in range(max_retries):
         try:
-            response = await client.aio.models.generate_content(
-                model = "gemini-2.5-flash-lite",
+            response = await _get_client().aio.models.generate_content(
+                model=settings.llm_model,
                 contents=prompt,
-                config=GEN_CONFIG,
+                config=gen_config,
             )
             finish_reason = str(response.candidates[0].finish_reason)
             if finish_reason == 'FinishReason.MAX_TOKENS':
