@@ -2,8 +2,9 @@ import asyncio
 import random
 
 from google import genai
-from google.api_core import exceptions as google_exceptions
+from google.genai import errors as genai_errors
 from google.genai import types
+from sigma.exceptions import (LLMAuthError, LLMError, LLMRateLimited, LLMUnavailable, LLMInvalidResponse,)
 
 from sigma.config import get_settings
 from sigma.logger import get_logger
@@ -11,14 +12,16 @@ from functools import lru_cache
 
 logger = get_logger(__name__)
 
-class AnalysisError(Exception):
-    """Base exception for all analyzer failures"""
+def _translate(err: genai_errors.APIError) -> LLMError:
+    code = err.code
+    if code == 429:
+        return LLMRateLimited(str(err))
+    if code in (401, 403):
+        return LLMAuthError(str(err))
+    if code is not None and 500 <= code < 600:
+        return LLMUnavailable(str(err))
+    return LLMError(str(err))
 
-class GeminiRateLimitError(AnalysisError):
-    """Gemini API rate limit hit (HTTP 429 / ResourceExhausted)"""
-
-class GeminiUnavilableError(AnalysisError):
-    """Gemini API returned a server error — safe to retry"""
 
 @lru_cache(maxsize=1)
 def _get_client() -> genai.Client:
@@ -38,7 +41,6 @@ async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
         max_output_tokens=settings.llm_max_output_tokens,
     )
 
-    last_exception = None
     for attempt in range(max_retries):
         try:
             response = await _get_client().aio.models.generate_content(
@@ -46,39 +48,34 @@ async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
                 contents=prompt,
                 config=gen_config,
             )
-            finish_reason = str(response.candidates[0].finish_reason)
-            if finish_reason == 'FinishReason.MAX_TOKENS':
-                logger.warning("response_truncated",finish_reason=finish_reason)
-            elif finish_reason == 'FinishReason.SAFETY':
-                logger.error("response_blocked_by_safety", finish_reason=finish_reason)
-                raise AnalysisError('Gemini Blocked this response due to safety filters')
-            if response.usage_metadata:
-                logger.info(
-                    "gemini_response_received",
-                    prompt_tokens=response.usage_metadata.prompt_token_count,
-                    response_tokens=response.usage_metadata.candidates_token_count,
-                    context_tokens=response.usage_metadata.total_token_count,
-                    attempt=attempt
-                )
-            return response.text
-        except google_exceptions.ResourceExhausted as e:
-            wait = 2 ** attempt
-            logger.warning('gemini_rate_limited',attempt=attempt,wait_seconds=wait)
+        except genai_errors.APIError as e:
+            err = _translate(e)
+            if not err.retryable or attempt == max_retries - 1:
+                raise err from e
+            wait = 2 ** attempt + random.uniform(0, 1)
+            logger.warning("gemini_retrying", attempt=attempt,
+                           wait_seconds=round(wait, 2), code=e.code)
             await asyncio.sleep(wait)
-            last_exception = e
-        except (google_exceptions.InternalServerError,google_exceptions.ServiceUnavailable) as e:
-            wait = 2 ** attempt
-            logger.warning('gemini_server_error', attempt=attempt,wait_seconds=wait,error=str(e))
-            await asyncio.sleep(wait)
-            last_exception = e
-        except google_exceptions.InvalidArgument as e:
-            logger.error('gemini_invalid_argument', error=str(e))
-            raise AnalysisError(f"Invalid request to Gemini: {e}") from e
-        except google_exceptions.Unauthenticated as e:
-            logger.error('gemini_auth_failed')
-            raise AnalysisError('Gemini Auth failed Check your api key') from e
-    logger.error('gemini_max_retries_exceeded', attempt=max_retries)
-    raise GeminiRateLimitError("Gemini unavailable after max retries") from last_exception
+            continue
+
+        if not response.candidates:
+            raise LLMInvalidResponse("Gemini returned no candidates")
+
+        finish_reason = str(response.candidates[0].finish_reason)
+        if finish_reason == "FinishReason.MAX_TOKENS":
+            raise LLMInvalidResponse("Gemini response truncated at max_output_tokens")
+        if finish_reason == "FinishReason.SAFETY":
+            raise LLMInvalidResponse("Gemini blocked this response at the safety layer")
+
+        if response.usage_metadata:
+            logger.info(
+                "gemini_response_received",
+                prompt_tokens=response.usage_metadata.prompt_token_count,
+                response_tokens=response.usage_metadata.candidates_token_count,
+                context_tokens=response.usage_metadata.total_token_count,
+                attempt=attempt,
+            )
+        return response.text
 
 def _build_prompt(data: dict) -> str:
     def fmt(value, prefix='', suffix='',decimals=2):
@@ -143,7 +140,7 @@ async def analyze_ticker(data: dict) -> str:
     analysis = await _call_gemini_with_retry(prompt)
     if analysis is None:
         logger.error('analysis_returned_empty')
-        raise AnalysisError('Gemini returned no Text')
+        raise LLMInvalidResponse('Gemini returned no Text')
     log.info('analyzer_complete',response_length=len(analysis))
     return analysis
 
