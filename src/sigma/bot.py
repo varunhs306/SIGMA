@@ -10,14 +10,10 @@ from telegram.ext import (
 
 from sigma.config import get_settings
 from sigma.logger import get_logger
-from sigma.fetcher import (
-    fetch_ticker,
-    FetchError,
-    InvalidTickerError,
-    RateLimitError,
-)
+from sigma.exceptions import SigmaError
+from sigma.fetcher import fetch_ticker
 import telegramify_markdown
-from sigma.analyzer import analyze_ticker, AnalysisError, GeminiRateLimitError
+from sigma.analyzer import analyze_ticker
 
 logger = get_logger(__name__)
 
@@ -79,24 +75,19 @@ async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     try:
         data = await fetch_ticker(symbol)
 
-    except InvalidTickerError:
-        log.warning('invalid_ticker')
-        await update.message.reply_text(
-            f"{symbol} is not a valid ticker symbol.\n"
-            "Try using proper suffix"
-        )
+    except SigmaError as e:
+        # Expected failure. The exception already knows what to tell the user.
+        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        await update.message.reply_text(e.user_message)
         return
-    except RateLimitError:
-        log.warning('rate_limited')
-        await update.message.reply_text(
-            "Yahoo finance is busy right now. Please try again later"
-        )
+
+    except Exception:
+        # BUG PATH. An unmodelled failure is a defect in the exception hierarchy,
+        # not a user error. log.exception() keeps the traceback.
+        log.exception("unhandled_exception")
+        await update.message.reply_text("Something went wrong. Please try again.")
         return
-    except FetchError as e:
-        log.warning('fetch_failed',error=str(e))
-        await update.message.reply_text('Somethings wrong...Could not fetch data. Try again later')
-        return
-    
+
     message = (
         f"{data.get('company_name', symbol)} ({symbol})"
         "\n"
@@ -130,39 +121,28 @@ async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     try:
         data = await fetch_ticker(symbol)
     
-    except InvalidTickerError:
-        log.warning('invalid_ticker')
-        await update.message.reply_text(
-            f"{symbol} is not a valid ticker symbol.\n"
-            "Try using proper suffix"
-        )
+    except SigmaError as e:
+        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        await update.message.reply_text(e.user_message)
         return
-    except RateLimitError:
-        log.warning('rate_limited')
-        await update.message.reply_text(
-            "Yahoo finance is busy right now. Please try again later"
-        )
+
+    except Exception:
+        log.exception("unhandled_exception")
+        await update.message.reply_text("Something went wrong. Please try again.")
         return
-    except FetchError as e:
-        log.error('fetch_failed',error=str(e))
-        await update.message.reply_text('Somethings wrong...Could not fetch data. Try again later')
-        return
-    
+
     try:
         analysis = await analyze_ticker(data)
-    except GeminiRateLimitError:
-        log.warning('rate_limited_gemini')
-        await update.message.reply_text(
-            "Gemini is busy rightnow, try again later"
-        )
+
+    except SigmaError as e:
+        # analyze_ticker now raises LLMError subclasses, which SigmaError covers.
+        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        await update.message.reply_text(e.user_message)
         return
-    except AnalysisError as e:
-        log.error('analysis_failed',error=str(e))
-        await update.message.reply_text('Analysis failed,Please try again later')
-        return
-    except Exception as e:
+
+    except Exception:
         log.exception('unhandled_exception')
-        await update.message.reply_text("Something went wrong")
+        await update.message.reply_text("Something went wrong. Please try again.")
         return
     header = f"📈*{symbol}* Analysis\n\n"
     await update.message.reply_text(header + analysis,parse_mode='Markdown')

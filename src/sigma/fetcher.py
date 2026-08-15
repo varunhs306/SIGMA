@@ -6,14 +6,12 @@ from typing import Optional
 import yfinance as yf
 from sigma.logger import get_logger
 from sigma.config import get_settings
+from sigma.exceptions import ProviderError, ProviderRateLimited, SymbolNotFoundError
 logger = get_logger(__name__)
 
-class FetchError(Exception):
-    "Base exception for all fetcher failures"
-class InvalidTickerError(FetchError):
-    "Ticker symbol is invalid or has no data on Yahoo Finance"
-class RateLimitError(FetchError):
-    "Yahoo Finance is throttling our requests"
+FetchError = ProviderError
+InvalidTickerError = SymbolNotFoundError
+RateLimitError = ProviderRateLimited
 
 def _validate_symbol(symbol: str) -> bool:
     return bool(re.match(r'^[A-Z0-9.\-\^]{1,10}$', symbol.upper()))
@@ -29,15 +27,16 @@ async def _fetch_from_yfinance(symbol: str) -> tuple:
     
     return await loop.run_in_executor(None,blocking_fetch)
 
-def _safe_get(data: dict, key: str, default=None):
-    value = data.get(key,default)
+def _get_optional(data: dict, key: str, log, default=None):
+    value = data.get(key, default)
     if value is None:
-        logger.warning("missing_field", field=key)
+        log.debug("field_absent", field=key)
         return default
     return value
 
-def _build_clean_data(symbol: str, info: dict, history) -> dict:
-    price_change_30d = 0
+def _build_clean_data(symbol: str, info: dict, history, log) -> dict:
+    # None, not 0: "we have no history" must not render as "the stock did not move".
+    price_change_30d = None
 
     if history is not None and not history.empty:
         first_close = history['Close'].iloc[0]
@@ -46,20 +45,20 @@ def _build_clean_data(symbol: str, info: dict, history) -> dict:
 
     return {
         "symbol":symbol,
-        "company_name":_safe_get(info,"longName"),
-        "current_price":_safe_get(info,"currentPrice"),
-        "market_cap":_safe_get(info,"marketCap"),
-        "trailing_pe":_safe_get(info,"trailingPE"),
-        "forward_pe":_safe_get(info,"forwardPE"),
-        "price_to_book":_safe_get(info,"priceToBook"),
-        "week_52_high":_safe_get(info,"fiftyTwoWeekHigh"),
-        "week_52_low":_safe_get(info,"fiftyTwoWeekLow"),
-        "volume":_safe_get(info,"volume"),
-        "avg_volume":_safe_get(info,"averageVolume"),
-        "beta":_safe_get(info,"beta"),
-        "dividend_yield":_safe_get(info,"dividendYield"),
-        "sector":_safe_get(info,"sector"),
-        "industry":_safe_get(info,"industry"),
+        "company_name":_get_optional(info,"longName",log),
+        "current_price":_get_optional(info,"currentPrice",log),
+        "market_cap":_get_optional(info,"marketCap",log),
+        "trailing_pe":_get_optional(info,"trailingPE",log),
+        "forward_pe":_get_optional(info,"forwardPE",log),
+        "price_to_book":_get_optional(info,"priceToBook",log),
+        "week_52_high":_get_optional(info,"fiftyTwoWeekHigh",log),
+        "week_52_low":_get_optional(info,"fiftyTwoWeekLow",log),
+        "volume":_get_optional(info,"volume",log),
+        "avg_volume":_get_optional(info,"averageVolume",log),
+        "beta":_get_optional(info,"beta",log),
+        "dividend_yield":_get_optional(info,"dividendYield",log),
+        "sector":_get_optional(info,"sector",log),
+        "industry":_get_optional(info,"industry",log),
         "price_change_30d":price_change_30d,
     }
 
@@ -77,6 +76,9 @@ async def fetch_ticker(symbol: str) -> dict:
     try:
         info, history = await _fetch_from_yfinance(symbol)
     except Exception as e:
+        # HACK(day-08): classifying by exception message text. yfinance raises bare
+        # Exception for everything, so there is nothing else to switch on until it is
+        # behind an adapter with its own error taxonomy.
         error_str = str(e).lower()
         if '429' in error_str or 'too many requests' in error_str:
             log.warning('rate_limited')
@@ -90,7 +92,7 @@ async def fetch_ticker(symbol: str) -> dict:
     
     log.info("yfinance_fetch_success", info_fields=len(info), history_rows=len(history))
 
-    clean_data = _build_clean_data(symbol,info,history)
+    clean_data = _build_clean_data(symbol,info,history,log)
     log.info("fetch_complete")
     return clean_data
 
