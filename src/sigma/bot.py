@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 
 from sigma.config import get_settings
-from sigma.logger import get_logger
+from sigma.logging import bind_run, get_logger, new_run
 from sigma.exceptions import SigmaError
 from sigma.fetcher import fetch_ticker
 import telegramify_markdown
@@ -44,8 +44,8 @@ def fmt_change(change):
     return f'{change:.2f}%'
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    log = logger.bind(user_id=update.effective_user.id, command='start')
-    log.info('command_received')
+    new_run(user_id=update.effective_user.id, command='start')
+    logger.info('request_start')
 
     welcome_text = (
         "👋 Welcome to SAGE Bot — your financial analysis assistant.\n\n"
@@ -56,19 +56,19 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Example: /analyze AAPL"
     )
     await update.message.reply_text(welcome_text)
-    log.info('response_sent')
+    logger.info('response_sent')
 
 async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    log = logger.bind(user_id = update.effective_user.id, command='price')
-    log.info('command_received')
+    new_run(user_id=update.effective_user.id, command='price')
+    logger.info('request_start')
 
     if not context.args:
-        log.warning('missing_argument')
+        logger.warning('missing_argument')
         await update.message.reply_text('Usage: /price <TICKER> \nExample: /price AAPL')
         return
     symbol = context.args[0].upper()
-    log = log.bind(ticker=symbol)
-    log.info('processing_request')
+    bind_run(ticker=symbol)
+    logger.info('processing_request')
 
     await update.message.reply_text(f"Fetching data for {symbol}...")
 
@@ -77,14 +77,14 @@ async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     except SigmaError as e:
         # Expected failure. The exception already knows what to tell the user.
-        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        logger.warning("request_failed", error_type=type(e).__name__, error=str(e))
         await update.message.reply_text(e.user_message)
         return
 
     except Exception:
         # BUG PATH. An unmodelled failure is a defect in the exception hierarchy,
-        # not a user error. log.exception() keeps the traceback.
-        log.exception("unhandled_exception")
+        # not a user error. logger.exception() keeps the traceback.
+        logger.exception("unhandled_exception")
         await update.message.reply_text("Something went wrong. Please try again.")
         return
 
@@ -99,21 +99,21 @@ async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"30D Change:{fmt_change(data.get('price_change_30d'))}"
     )
     await update.message.reply_text(message)
-    log.info('response_sent')
+    logger.info('response_sent')
 
 async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    log = logger.bind(user_id=update.effective_user.id,command='analyze')
-    log.info('command_received')
+    new_run(user_id=update.effective_user.id, command='analyze')
+    logger.info('request_start')
 
     if not context.args:
-        log.warning('missing_argument')
+        logger.warning('missing_argument')
         await update.message.reply_text(
             "Usage:/analyze <TICKER>\nExample: /analyze AAPL"
         )
         return
     symbol = context.args[0].upper()
-    log = log.bind(ticker=symbol)
-    log.info('processing_request')
+    bind_run(ticker=symbol)
+    logger.info('processing_request')
     await update.message.reply_text(
         f"Analyzing {symbol}....this may take few seconds"
     )
@@ -122,12 +122,12 @@ async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         data = await fetch_ticker(symbol)
     
     except SigmaError as e:
-        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        logger.warning("request_failed", error_type=type(e).__name__, error=str(e))
         await update.message.reply_text(e.user_message)
         return
 
     except Exception:
-        log.exception("unhandled_exception")
+        logger.exception("unhandled_exception")
         await update.message.reply_text("Something went wrong. Please try again.")
         return
 
@@ -136,31 +136,31 @@ async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     except SigmaError as e:
         # analyze_ticker now raises LLMError subclasses, which SigmaError covers.
-        log.warning("request_failed", error_type=type(e).__name__, error=str(e))
+        logger.warning("request_failed", error_type=type(e).__name__, error=str(e))
         await update.message.reply_text(e.user_message)
         return
 
     except Exception:
-        log.exception('unhandled_exception')
+        logger.exception('unhandled_exception')
         await update.message.reply_text("Something went wrong. Please try again.")
         return
     header = f"📈*{symbol}* Analysis\n\n"
     await update.message.reply_text(header + analysis,parse_mode='Markdown')
-    log.info('response_sent',response_length=len(analysis))
+    logger.info('response_sent',response_length=len(analysis))
 
 async def unknown_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    log = logger.bind(user_id=update.effective_user.id)
-    log.info('unkown_message_received', text_length=len(update.message.text))
+    new_run(user_id=update.effective_user.id, command='unknown')
+    logger.info('unknown_message_received', text_length=len(update.message.text))
     await update.message.reply_text("I only respond to commands.")
 async def help_handler(update: Update,context: ContextTypes.DEFAULT_TYPE) -> None:
-    log = logger.bind(user_id=update.effective_user.id,command='help')
-    log.info('command_received')
+    new_run(user_id=update.effective_user.id, command='help')
+    logger.info('request_start')
 
     await update.message.reply_text(
         "SAGE BOT= analysis\n\n"
 
     )
-    log.info('response_sent')
+    logger.info('response_sent')
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error(
         "unhandled_telegram_error",

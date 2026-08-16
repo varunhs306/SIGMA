@@ -4,7 +4,7 @@ import time
 from typing import Optional
 
 import yfinance as yf
-from sigma.logger import get_logger
+from sigma.logging import get_logger
 from sigma.config import get_settings
 from sigma.exceptions import ProviderError, ProviderRateLimited, SymbolNotFoundError
 logger = get_logger(__name__)
@@ -98,11 +98,12 @@ async def fetch_ticker(symbol: str) -> dict:
 
 if __name__ == '__main__':
     import asyncio
-    from sigma.logger import setup_logger
+    from sigma.config import get_settings as _gs
+    from sigma.logging import setup_logging
     import logging
     logging.getLogger("yfinance").setLevel(logging.ERROR)
 
-    setup_logger()
+    setup_logging(_gs())
 
     async def test():
         data = await fetch_ticker('AAPL')

@@ -7,7 +7,7 @@ from google.genai import types
 from sigma.exceptions import (LLMAuthError, LLMError, LLMRateLimited, LLMUnavailable, LLMInvalidResponse,)
 
 from sigma.config import get_settings
-from sigma.logger import get_logger
+from sigma.logging import get_logger
 from functools import lru_cache
 
 logger = get_logger(__name__)
@@ -53,7 +53,7 @@ async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
             if not err.retryable or attempt == max_retries - 1:
                 raise err from e
             wait = 2 ** attempt + random.uniform(0, 1)
-            logger.warning("gemini_retrying", attempt=attempt,
+            logger.info("gemini_retrying", attempt=attempt,
                            wait_seconds=round(wait, 2), code=e.code)
             await asyncio.sleep(wait)
             continue
@@ -147,10 +147,11 @@ async def analyze_ticker(data: dict) -> str:
 
 if __name__ == '__main__':
     import asyncio
-    from sigma.logger import setup_logger
+    from sigma.config import get_settings as _gs
+    from sigma.logging import setup_logging
     from sigma.fetcher import fetch_ticker
 
-    setup_logger()
+    setup_logging(_gs())
     async def test():
         data = await fetch_ticker('AAPL')
         analysis = await analyze_ticker(data)
