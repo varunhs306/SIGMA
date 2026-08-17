@@ -1,0 +1,15 @@
+services:
+  bot:
+    build: .
+    image: sigma:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      LOG_FILE: /data/logs/sigma.log
+    volumes:
+      - sigma-data:/data
+    stop_grace_period: 30s
+
+volumes:
+  sigma-data:
