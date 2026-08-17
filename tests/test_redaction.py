@@ -3,7 +3,11 @@ from collections import namedtuple
 import pytest
 
 from sigma.logging.redaction import (
-    MASK, _scrub, clear_secrets, redact_processor, register_secret,
+    MASK,
+    _scrub,
+    clear_secrets,
+    redact_processor,
+    register_secret,
 )
 from tests.fakes import fake_google_key, fake_telegram_token
 
@@ -26,13 +30,16 @@ def test_the_day_01_leak_shape():
     assert MASK in _scrub(url)
 
 
-@pytest.mark.parametrize("value", [
-    TOKEN,
-    {"auth": {"data": KEY}},
-    ["a", {"b": [TOKEN]}],
-    (KEY,),
-    f"prefix {TOKEN} suffix",
-])
+@pytest.mark.parametrize(
+    "value",
+    [
+        TOKEN,
+        {"auth": {"data": KEY}},
+        ["a", {"b": [TOKEN]}],
+        (KEY,),
+        f"prefix {TOKEN} suffix",
+    ],
+)
 def test_secrets_are_scrubbed_at_any_depth(value):
     assert TOKEN not in str(_scrub(value))
     assert KEY not in str(_scrub(value))
@@ -58,10 +65,21 @@ def test_short_values_are_not_registered():
     assert _scrub("abc def") == "abc def"
 
 
-@pytest.mark.parametrize("key", [
-    "token", "secret", "password", "api_key", "apikey", "authorization",
-    "bot_token", "gemini_api_key", "private_key", "db_password",
-])
+@pytest.mark.parametrize(
+    "key",
+    [
+        "token",
+        "secret",
+        "password",
+        "api_key",
+        "apikey",
+        "authorization",
+        "bot_token",
+        "gemini_api_key",
+        "private_key",
+        "db_password",
+    ],
+)
 def test_sensitive_field_names_are_masked_whatever_the_value(key):
     out = _scrub({key: "a-completely-unrecognised-credential-format"})
     assert out[key] == MASK

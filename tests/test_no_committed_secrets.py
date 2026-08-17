@@ -12,7 +12,10 @@ _SELF = pathlib.Path(__file__).name
 def _pushable_files():
     out = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-        cwd=_ROOT, capture_output=True, text=True, check=True,
+        cwd=_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.split()
     return [_ROOT / f for f in out]
 

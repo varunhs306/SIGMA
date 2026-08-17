@@ -54,6 +54,7 @@ def test_secret_is_masked_everywhere_it_could_leak():
 
 def test_root_points_at_the_repository_root():
     from sigma.config import _ROOT
+
     assert (_ROOT / "pyproject.toml").exists(), f"_ROOT resolved to {_ROOT}"
 
 

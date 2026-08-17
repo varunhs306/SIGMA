@@ -10,15 +10,18 @@ def _api_error(code):
     return cls(code, {"error": {"message": "x"}})
 
 
-@pytest.mark.parametrize("code, expected, retryable", [
-    (429, LLMRateLimited, True),
-    (401, LLMAuthError, False),
-    (403, LLMAuthError, False),
-    (500, LLMUnavailable, True),
-    (503, LLMUnavailable, True),
-    (400, LLMError, False),
-    (418, LLMError, False),
-])
+@pytest.mark.parametrize(
+    "code, expected, retryable",
+    [
+        (429, LLMRateLimited, True),
+        (401, LLMAuthError, False),
+        (403, LLMAuthError, False),
+        (500, LLMUnavailable, True),
+        (503, LLMUnavailable, True),
+        (400, LLMError, False),
+        (418, LLMError, False),
+    ],
+)
 def test_translation_and_retryability(code, expected, retryable):
     err = _translate(_api_error(code))
     assert type(err) is expected

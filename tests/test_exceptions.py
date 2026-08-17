@@ -1,13 +1,27 @@
 import pytest
 
 from sigma.exceptions import (
-    ConfigurationError, LLMAuthError, LLMRateLimited, LLMUnavailable,
-    ProviderRateLimited, ProviderTimeout, ProviderUnavailable,
-    SigmaError, SymbolNotFoundError,
+    ConfigurationError,
+    LLMAuthError,
+    LLMRateLimited,
+    LLMUnavailable,
+    ProviderRateLimited,
+    ProviderTimeout,
+    ProviderUnavailable,
+    SigmaError,
+    SymbolNotFoundError,
 )
 
-ALL = [ConfigurationError, LLMAuthError, LLMRateLimited, LLMUnavailable,
-       ProviderRateLimited, ProviderTimeout, ProviderUnavailable, SymbolNotFoundError]
+ALL = [
+    ConfigurationError,
+    LLMAuthError,
+    LLMRateLimited,
+    LLMUnavailable,
+    ProviderRateLimited,
+    ProviderTimeout,
+    ProviderUnavailable,
+    SymbolNotFoundError,
+]
 
 
 @pytest.mark.parametrize("cls", ALL)
@@ -26,10 +40,18 @@ def test_technical_message_does_not_leak_into_user_message():
     assert "abc123" not in e.user_message
 
 
-@pytest.mark.parametrize("cls, expected", [
-    (ProviderRateLimited, True), (ProviderUnavailable, True), (ProviderTimeout, True),
-    (LLMRateLimited, True), (LLMUnavailable, True),
-    (SymbolNotFoundError, False), (LLMAuthError, False), (ConfigurationError, False),
-])
+@pytest.mark.parametrize(
+    "cls, expected",
+    [
+        (ProviderRateLimited, True),
+        (ProviderUnavailable, True),
+        (ProviderTimeout, True),
+        (LLMRateLimited, True),
+        (LLMUnavailable, True),
+        (SymbolNotFoundError, False),
+        (LLMAuthError, False),
+        (ConfigurationError, False),
+    ],
+)
 def test_retryable_classification(cls, expected):
     assert cls("x").retryable is expected

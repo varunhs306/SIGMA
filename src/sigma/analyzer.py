@@ -1,16 +1,23 @@
 import asyncio
 import random
+from functools import lru_cache
 
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
-from sigma.exceptions import (LLMAuthError, LLMError, LLMRateLimited, LLMUnavailable, LLMInvalidResponse,)
 
 from sigma.config import get_settings
+from sigma.exceptions import (
+    LLMAuthError,
+    LLMError,
+    LLMInvalidResponse,
+    LLMRateLimited,
+    LLMUnavailable,
+)
 from sigma.logging import get_logger
-from functools import lru_cache
 
 logger = get_logger(__name__)
+
 
 def _translate(err: genai_errors.APIError) -> LLMError:
     code = err.code
@@ -33,7 +40,8 @@ GEN_CONFIG = types.GenerateContentConfig(
     max_output_tokens=1024,
 )
 
-async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
+
+async def _call_gemini_with_retry(prompt: str, max_retries: int | None = None):
     settings = get_settings()
     max_retries = max_retries or settings.llm_max_retries
     gen_config = types.GenerateContentConfig(
@@ -52,9 +60,10 @@ async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
             err = _translate(e)
             if not err.retryable or attempt == max_retries - 1:
                 raise err from e
-            wait = 2 ** attempt + random.uniform(0, 1)
-            logger.info("gemini_retrying", attempt=attempt,
-                           wait_seconds=round(wait, 2), code=e.code)
+            wait = 2**attempt + random.uniform(0, 1)  # noqa: S311
+            logger.info(
+                "gemini_retrying", attempt=attempt, wait_seconds=round(wait, 2), code=e.code
+            )
             await asyncio.sleep(wait)
             continue
 
@@ -77,17 +86,18 @@ async def _call_gemini_with_retry(prompt: str, max_retries:int | None = None):
             )
         return response.text
 
+
 def _build_prompt(data: dict) -> str:
-    def fmt(value, prefix='', suffix='',decimals=2):
+    def fmt(value, prefix="", suffix="", decimals=2):
         if value is None:
-            return 'N/A'
-        if isinstance(value,float):
+            return "N/A"
+        if isinstance(value, float):
             return f"{prefix}{value:.{decimals}f}{suffix}"
-        if isinstance(value,int):
+        if isinstance(value, int):
             return f"{prefix}{value:,}{suffix}"
         return f"{prefix}{value}{suffix}"
-    
-    market_cap = data.get('market_cap')
+
+    market_cap = data.get("market_cap")
 
     if market_cap and market_cap >= 1_000_000_000_000:
         market_cap_str = f"{market_cap / 1_000_000_000_000:.2f}T"
@@ -95,30 +105,30 @@ def _build_prompt(data: dict) -> str:
         market_cap_str = f"{market_cap / 1_000_000_000:.2f}B"
     else:
         market_cap_str = fmt(market_cap, prefix="$")
-    
-    price_change= data.get('price_change_30d')
+
+    price_change = data.get("price_change_30d")
     if price_change is not None and price_change > 0:
         price_change_str = f"+{price_change:.2f}%"
     elif price_change is not None:
         price_change_str = f"{price_change:.2f}%"
     else:
-        price_change_str = 'N/A'
+        price_change_str = "N/A"
 
-    return f"""You are a senior financial analyst. Analyze the following market data for {data.get('symbol')} ({data.get('company_name', 'Unknown')}).
+    return f"""You are a senior financial analyst. Analyze the following market data for {data.get("symbol")} ({data.get("company_name", "Unknown")}).
 === MARKET DATA ===
-Sector: {data.get('sector', 'N/A')}
-Industry: {data.get('industry', 'N/A')}
-Current Price: {fmt(data.get('current_price'), prefix='$')}
+Sector: {data.get("sector", "N/A")}
+Industry: {data.get("industry", "N/A")}
+Current Price: {fmt(data.get("current_price"), prefix="$")}
 Market Cap: {market_cap_str}
-P/E Ratio (Trailing): {fmt(data.get('trailing_pe'))}
-P/E Ratio (Forward): {fmt(data.get('forward_pe'))}
-Price-to-Book: {fmt(data.get('price_to_book'))}
-52-Week High: {fmt(data.get('week_52_high'), prefix='$')}
-52-Week Low: {fmt(data.get('week_52_low'), prefix='$')}
-Today's Volume: {fmt(data.get('volume'))}
-Average Volume (90d): {fmt(data.get('avg_volume'))}
-Beta: {fmt(data.get('beta'))}
-Dividend Yield: {fmt(data.get('dividend_yield'), suffix='%', decimals=4) if data.get('dividend_yield') else 'N/A'}
+P/E Ratio (Trailing): {fmt(data.get("trailing_pe"))}
+P/E Ratio (Forward): {fmt(data.get("forward_pe"))}
+Price-to-Book: {fmt(data.get("price_to_book"))}
+52-Week High: {fmt(data.get("week_52_high"), prefix="$")}
+52-Week Low: {fmt(data.get("week_52_low"), prefix="$")}
+Today's Volume: {fmt(data.get("volume"))}
+Average Volume (90d): {fmt(data.get("avg_volume"))}
+Beta: {fmt(data.get("beta"))}
+Dividend Yield: {fmt(data.get("dividend_yield"), suffix="%", decimals=4) if data.get("dividend_yield") else "N/A"}
 30-Day Price Change: {price_change_str}
 
 Provide a structured analysis covering:
@@ -129,33 +139,36 @@ Provide a structured analysis covering:
 Be concise. Do not give buy or sell recommendations. If a metric shows N/A, skip it and work with what is available.\n\n
 Format your response using Telegram Markdown: use *text* for bold (not **text**), use - for bullet points. No headers with #."""
 
+
 async def analyze_ticker(data: dict) -> str:
-    symbol = data.get('symbol','UNKNOWN')
+    symbol = data.get("symbol", "UNKNOWN")
     log = logger.bind(ticker=symbol)
 
-    log.info('analyzer_started')
+    log.info("analyzer_started")
     prompt = _build_prompt(data)
-    log.debug('prompt_built',char_length=len(prompt))
+    log.debug("prompt_built", char_length=len(prompt))
 
     analysis = await _call_gemini_with_retry(prompt)
     if analysis is None:
-        logger.error('analysis_returned_empty')
-        raise LLMInvalidResponse('Gemini returned no Text')
-    log.info('analyzer_complete',response_length=len(analysis))
+        logger.error("analysis_returned_empty")
+        raise LLMInvalidResponse("Gemini returned no Text")
+    log.info("analyzer_complete", response_length=len(analysis))
     return analysis
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
+
     from sigma.config import get_settings as _gs
-    from sigma.logging import setup_logging
     from sigma.fetcher import fetch_ticker
+    from sigma.logging import setup_logging
 
     setup_logging(_gs())
+
     async def test():
-        data = await fetch_ticker('AAPL')
+        data = await fetch_ticker("AAPL")
         analysis = await analyze_ticker(data)
         print("\n---------ANalysis---------------")
         print(analysis)
-    asyncio.run(test())
 
+    asyncio.run(test())

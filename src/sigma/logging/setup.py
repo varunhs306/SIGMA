@@ -1,8 +1,10 @@
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
+from typing import Any
 
 import structlog
+from structlog.typing import Processor
 
 from sigma.logging.redaction import redact_processor, register_secret
 
@@ -17,7 +19,7 @@ _THIRD_PARTY_LEVELS = {
 }
 
 
-def setup_logging(settings) -> None:
+def setup_logging(settings: Any) -> None:
     global _CONFIGURED
     if _CONFIGURED:
         return
@@ -26,7 +28,7 @@ def setup_logging(settings) -> None:
     register_secret(settings.gemini_api_key.get_secret_value())
     register_secret(settings.telegram_bot_token.get_secret_value())
 
-    shared = [
+    shared: list[Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
@@ -38,19 +40,24 @@ def setup_logging(settings) -> None:
 
     settings.log_file.parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
-        settings.log_file, maxBytes=settings.log_max_bytes,
+        settings.log_file,
+        maxBytes=settings.log_max_bytes,
         backupCount=settings.log_backup_count,
     )
-    file_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
-        processor=structlog.processors.JSONRenderer(),
-        foreign_pre_chain=shared,
-    ))
+    file_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processor=structlog.processors.JSONRenderer(),
+            foreign_pre_chain=shared,
+        )
+    )
 
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(structlog.stdlib.ProcessorFormatter(
-        processor=structlog.dev.ConsoleRenderer(),
-        foreign_pre_chain=shared,
-    ))
+    console_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processor=structlog.dev.ConsoleRenderer(),
+            foreign_pre_chain=shared,
+        )
+    )
 
     root = logging.getLogger()
     root.setLevel(settings.log_level)

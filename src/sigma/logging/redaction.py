@@ -5,22 +5,33 @@ MASK = "***REDACTED***"
 
 _SECRETS: set[str] = set()
 
-_SENSITIVE_KEYS = frozenset({
-    "authorization", "credential", "credentials", "passwd", "password",
-    "secret", "token", "apikey", "api_key",
-})
+_SENSITIVE_KEYS = frozenset(
+    {
+        "authorization",
+        "credential",
+        "credentials",
+        "passwd",
+        "password",
+        "secret",
+        "token",
+        "apikey",
+        "api_key",
+    }
+)
 _SENSITIVE_SUFFIXES = ("_token", "_key", "_secret", "_password", "_credential")
 
 
-def _is_sensitive_key(key) -> bool:
+def _is_sensitive_key(key: Any) -> bool:
     k = str(key).lower()
     return k in _SENSITIVE_KEYS or k.endswith(_SENSITIVE_SUFFIXES)
 
 
 _URL_RULES = [
     (re.compile(r"(/bot)([^/\s]{15,})"), r"\1" + MASK),
-    (re.compile(r"(?i)([?&](?:api[_-]?key|key|token|access[_-]?token|auth)=)([^&\s\"']+)"),
-     r"\1" + MASK),
+    (
+        re.compile(r"(?i)([?&](?:api[_-]?key|key|token|access[_-]?token|auth)=)([^&\s\"']+)"),
+        r"\1" + MASK,
+    ),
     (re.compile(r"(://[^/\s:@]+:)([^@\s/]+)(@)"), r"\1" + MASK + r"\3"),
 ]
 
@@ -66,5 +77,5 @@ def _scrub(v: Any, key: Any = None) -> Any:
     return v
 
 
-def redact_processor(logger, method_name, event_dict):
+def redact_processor(logger: Any, method_name: str, event_dict: Any) -> Any:
     return _scrub(event_dict)

@@ -48,7 +48,8 @@ def test_foreign_stdlib_records_are_redacted(tmp_path, settings_factory):
     setup_logging(settings_factory(log_file=log_file))
     register_secret(TOKEN)
     logging.getLogger("httpx").warning(
-        "HTTP Request: GET https://api.telegram.org/bot%s/getUpdates", TOKEN)
+        "HTTP Request: GET https://api.telegram.org/bot%s/getUpdates", TOKEN
+    )
     logging.shutdown()
 
     text = log_file.read_text(encoding="utf-8")
