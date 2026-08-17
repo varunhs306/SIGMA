@@ -6,6 +6,7 @@ from typing import Annotated
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class LogLevel(StrEnum):
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -13,10 +14,11 @@ class LogLevel(StrEnum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
+
 _ROOT = Path(__file__).resolve().parents[2]
 
-class Settings(BaseSettings):
 
+class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_ROOT / ".env",
         env_file_encoding="utf-8",
@@ -33,6 +35,8 @@ class Settings(BaseSettings):
 
     history_period: str = "1mo"
 
+    data_dir: Path = _ROOT / "data"
+
     log_level: LogLevel = LogLevel.INFO
     log_file: Path = _ROOT / "logs" / "sigma.log"
     log_max_bytes: Annotated[int, Field(ge=1024)] = 5 * 1024 * 1024
@@ -41,4 +45,4 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
