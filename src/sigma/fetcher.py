@@ -1,9 +1,14 @@
 import asyncio
-import re
+import math
+from collections.abc import Mapping
+from typing import Any, cast
 
+import pandas as pd
 import yfinance as yf
+from pydantic import TypeAdapter, ValidationError
 
 from sigma.config import get_settings
+from sigma.domain import CompanyProfile, PriceBar, Quote, Symbol, TickerSnapshot
 from sigma.exceptions import ProviderError, ProviderRateLimited, SymbolNotFoundError
 from sigma.logging import get_logger
 
@@ -13,15 +18,39 @@ FetchError = ProviderError
 InvalidTickerError = SymbolNotFoundError
 RateLimitError = ProviderRateLimited
 
+_SYMBOL = TypeAdapter(Symbol)
 
-def _validate_symbol(symbol: str) -> bool:
-    return bool(re.match(r"^[A-Z0-9.\-\^]{1,10}$", symbol.upper()))
+# Our name -> the Yahoo names that can carry it, in order of preference.
+# Indices and BSE scrips have no 'currentPrice' at all: ^GSPC and 531910.BO
+# both return None there and a real price under 'regularMarketPrice'.
+_QUOTE_KEYS: dict[str, tuple[str, ...]] = {
+    "price": ("currentPrice", "regularMarketPrice"),
+    "market_cap": ("marketCap",),
+    "trailing_pe": ("trailingPE",),
+    "forward_pe": ("forwardPE",),
+    "price_to_book": ("priceToBook",),
+    "week_52_high": ("fiftyTwoWeekHigh",),
+    "week_52_low": ("fiftyTwoWeekLow",),
+    "volume": ("volume", "regularMarketVolume"),
+    "avg_volume": ("averageVolume",),
+    "beta": ("beta",),
+    "dividend_yield": ("dividendYield",),
+}
+
+_PROFILE_KEYS: dict[str, tuple[str, ...]] = {
+    # longName only. Yahoo's shortName for a BSE scrip is a machine identifier -
+    # 531910.BO returns '531910.BO,0P0000BRKR,244' - and junk that parses as a
+    # name is worse than no name, because `or symbol` renders no name correctly.
+    "name": ("longName",),
+    "sector": ("sector",),
+    "industry": ("industry",),
+}
 
 
-async def _fetch_from_yfinance(symbol: str) -> tuple:
+async def _fetch_from_yfinance(symbol: str) -> tuple[dict[str, Any], pd.DataFrame]:
     loop = asyncio.get_event_loop()
 
-    def blocking_fetch():
+    def blocking_fetch() -> tuple[dict[str, Any], pd.DataFrame]:
         tz_cache = get_settings().data_dir / "yf-tz-cache"
         tz_cache.mkdir(parents=True, exist_ok=True)
         yf.set_tz_cache_location(str(tz_cache))
@@ -33,54 +62,79 @@ async def _fetch_from_yfinance(symbol: str) -> tuple:
     return await loop.run_in_executor(None, blocking_fetch)
 
 
-def _get_optional(data: dict, key: str, log, default=None):
-    value = data.get(key, default)
-    if value is None:
-        log.debug("field_absent", field=key)
-        return default
-    return value
+def _present(info: Mapping[str, Any], keys: tuple[str, ...]) -> Any | None:
+    """Yahoo spells absence four ways. The domain spells it one way: None.
+
+    Missing key, explicit None, a pandas nan, and the empty string all mean the
+    same thing upstream, and translating vendor vocabulary is this layer's job.
+    """
+    for key in keys:
+        value = info.get(key)
+        if value is None:
+            continue
+        if isinstance(value, float) and not math.isfinite(value):
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        return value
+    return None
 
 
-def _build_clean_data(symbol: str, info: dict, history, log) -> dict:
-    # None, not 0: "we have no history" must not render as "the stock did not move".
-    price_change_30d = None
+def _to_bars(history: pd.DataFrame | None, log: Any) -> tuple[PriceBar, ...]:
+    """DataFrame -> domain. This function is where numpy scalars stop existing."""
+    if history is None or history.empty:
+        return ()
 
-    if history is not None and not history.empty:
-        first_close = history["Close"].iloc[0]
-        last_close = history["Close"].iloc[-1]
-        price_change_30d = round(((last_close - first_close) / first_close) * 100, 2)
+    bars: list[PriceBar] = []
+    rejected = 0
+    for timestamp, row in history.iterrows():
+        # iterrows() only promises Hashable for the index; yfinance always returns a
+        # DatetimeIndex. This cast is the pandas escape hatch, and it lives here
+        # because this is the only module allowed to touch a DataFrame.
+        ts = cast(pd.Timestamp, timestamp)
+        try:
+            bars.append(
+                PriceBar(
+                    date=ts.date(),
+                    open=float(row["Open"]),
+                    high=float(row["High"]),
+                    low=float(row["Low"]),
+                    close=float(row["Close"]),
+                    volume=int(row["Volume"]),
+                )
+            )
+        except (ValidationError, ValueError, TypeError):
+            # One unusable row must not cost the other 21. Dropped loudly, per Day 04.
+            rejected += 1
 
-    return {
-        "symbol": symbol,
-        "company_name": _get_optional(info, "longName", log),
-        "current_price": _get_optional(info, "currentPrice", log),
-        "market_cap": _get_optional(info, "marketCap", log),
-        "trailing_pe": _get_optional(info, "trailingPE", log),
-        "forward_pe": _get_optional(info, "forwardPE", log),
-        "price_to_book": _get_optional(info, "priceToBook", log),
-        "week_52_high": _get_optional(info, "fiftyTwoWeekHigh", log),
-        "week_52_low": _get_optional(info, "fiftyTwoWeekLow", log),
-        "volume": _get_optional(info, "volume", log),
-        "avg_volume": _get_optional(info, "averageVolume", log),
-        "beta": _get_optional(info, "beta", log),
-        "dividend_yield": _get_optional(info, "dividendYield", log),
-        "sector": _get_optional(info, "sector", log),
-        "industry": _get_optional(info, "industry", log),
-        "price_change_30d": price_change_30d,
-    }
-
-
-def _is_valid_ticker_response(info):
-    has_price = info.get("currentPrice") is not None or info.get("regularMarketPrice") is not None
-    return has_price
+    if rejected:
+        log.warning("bars_rejected", rejected=rejected, kept=len(bars))
+    return tuple(bars)
 
 
-async def fetch_ticker(symbol: str) -> dict:
+def _to_snapshot(
+    symbol: str, info: Mapping[str, Any], history: pd.DataFrame | None, log: Any
+) -> TickerSnapshot:
+    # model_validate, not the constructor: this data came off the wire, so its
+    # types are a claim rather than a fact. The constructor is for values we
+    # already know the type of; validation is for values we do not.
+    profile = CompanyProfile.model_validate(
+        {"symbol": symbol} | {f: _present(info, keys) for f, keys in _PROFILE_KEYS.items()}
+    )
+    quote = Quote.model_validate(
+        {"symbol": symbol} | {f: _present(info, keys) for f, keys in _QUOTE_KEYS.items()}
+    )
+    return TickerSnapshot(profile=profile, quote=quote, bars=_to_bars(history, log))
+
+
+async def fetch_ticker(symbol: str) -> TickerSnapshot:
     log = logger.bind(ticker=symbol)
 
-    if not _validate_symbol(symbol):
+    try:
+        symbol = _SYMBOL.validate_python(symbol)
+    except ValidationError as e:
         log.warning("invalid_ticker_format")
-        raise InvalidTickerError(f"'{symbol}' is not a valid Ticker format")
+        raise InvalidTickerError(f"'{symbol}' is not a valid ticker format") from e
 
     try:
         info, history = await _fetch_from_yfinance(symbol)
@@ -95,33 +149,20 @@ async def fetch_ticker(symbol: str) -> dict:
         log.error("yfinance_fetch_failed", error=str(e))
         raise FetchError(f"Failed to fetch data for {symbol}") from e
 
-    if not _is_valid_ticker_response(info):
-        log.warning("invalid_ticker_no_price_data", fields_returned=len(info))
-        raise InvalidTickerError(f"'{symbol}' returned no price data - may be invalid or delisted")
-
     log.info("yfinance_fetch_success", info_fields=len(info), history_rows=len(history))
 
-    clean_data = _build_clean_data(symbol, info, history, log)
-    log.info("fetch_complete")
-    return clean_data
+    try:
+        snapshot = _to_snapshot(symbol, info, history, log)
+    except ValidationError as e:
+        # No price is how a delisted or misspelled symbol arrives: Quote.price is
+        # required, so the old _is_valid_ticker_response check is now the type.
+        if any(err["loc"] == ("price",) for err in e.errors()):
+            log.warning("invalid_ticker_no_price_data", fields_returned=len(info))
+            raise InvalidTickerError(
+                f"'{symbol}' returned no price data - may be invalid or delisted"
+            ) from e
+        log.error("provider_payload_rejected", error_count=e.error_count(), errors=e.errors())
+        raise FetchError(f"'{symbol}' returned data that failed validation") from e
 
-
-if __name__ == "__main__":
-    import asyncio
-    import logging
-
-    from sigma.config import get_settings as _gs
-    from sigma.logging import setup_logging
-
-    logging.getLogger("yfinance").setLevel(logging.ERROR)
-
-    setup_logging(_gs())
-
-    async def test():
-        data = await fetch_ticker("AAPL")
-        print("apple:", data)
-
-        data = await fetch_ticker("<<")
-        print("tcs:", data)
-
-    asyncio.run(test())
+    log.info("fetch_complete", bars=len(snapshot.bars))
+    return snapshot
