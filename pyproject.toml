@@ -61,18 +61,13 @@ docstring-code-format = true
 [tool.mypy]
 python_version = "3.12"
 files = ["src/sigma"]
-warn_redundant_casts = true
-warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+# Day 06 deferred this: strict was out of reach while the fetcher returned a bare
+# dict. Killing the dict left two missing annotations, so the ratchet closes.
+strict = true
 warn_unreachable = true
-no_implicit_optional = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
 module = ["yfinance.*", "telegramify_markdown.*"]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "sigma.logging.*"
-disallow_untyped_defs = true
-disallow_any_generics = true
-warn_return_any = true

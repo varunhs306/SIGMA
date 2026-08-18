@@ -12,7 +12,7 @@ from sigma.config import get_settings
 from sigma.logging import setup_logging
 
 
-def main():
+def main() -> None:
     settings = get_settings()
     setup_logging(settings)
 

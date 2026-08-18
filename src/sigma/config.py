@@ -45,4 +45,7 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
+    # No type: ignore since Day 07. The pydantic mypy plugin knows a BaseSettings
+    # subclass fills its required fields from the environment, so the call that
+    # looked like a missing-argument error to plain mypy no longer does.
+    return Settings()
