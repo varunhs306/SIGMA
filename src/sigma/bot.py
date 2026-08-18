@@ -11,21 +11,19 @@ from sigma.logging import bind_run, get_logger, new_run
 logger = get_logger(__name__)
 
 
-def fmt(val, prefix="", suffix="", decimals=2):
+def fmt(val: float | int | None, prefix: str = "", suffix: str = "", decimals: int = 2) -> str:
     if val is None:
         return "N/A"
     if isinstance(val, float):
         return f"{prefix}{val:.{decimals}f}{suffix}"
-    if isinstance(val, int):
-        return f"{prefix}{val:,}{suffix}"
-    return f"{prefix}{val}{suffix}"
+    return f"{prefix}{val:,}{suffix}"
 
 
 TRILLION = 1_000_000_000_000
 BILLION = 1_000_000_000
 
 
-def fmt_market_cap(market_cap):
+def fmt_market_cap(market_cap: int | None) -> str:
     if market_cap is None:
         return "N/A"
     if market_cap >= TRILLION:
@@ -35,7 +33,7 @@ def fmt_market_cap(market_cap):
     return f"${market_cap:,}"
 
 
-def fmt_change(change):
+def fmt_change(change: float | None) -> str:
     if change is None:
         return "N/A"
     if change > 0:
@@ -82,7 +80,7 @@ async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await message.reply_text(f"Fetching data for {symbol}...")
 
     try:
-        data = await fetch_ticker(symbol)
+        snapshot = await fetch_ticker(symbol)
 
     except SigmaError as e:
         # Expected failure. The exception already knows what to tell the user.
@@ -97,15 +95,18 @@ async def price_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await message.reply_text("Something went wrong. Please try again.")
         return
 
+    quote = snapshot.quote
     reply = (
-        f"{data.get('company_name', symbol)} ({symbol})"
+        # `or symbol`, not dict.get(key, symbol): the key was always present and
+        # always None, so the default never fired and the header read "None (AAPL)".
+        f"{snapshot.profile.name or symbol} ({symbol})"
         "\n"
-        f"Price: {fmt(data.get('current_price'), prefix='$')}\n"
-        f"Market Cap:{fmt_market_cap(data.get('market_cap'))}\n"
-        f"P/E Ratio:{fmt(data.get('trailing_pe'))}\n"
-        f"52W High:{fmt(data.get('week_52_high'), prefix='$')}\n"
-        f"52W Low:{fmt(data.get('week_52_low'), prefix='$')}\n"
-        f"30D Change:{fmt_change(data.get('price_change_30d'))}"
+        f"Price: {fmt(quote.price, prefix='$')}\n"
+        f"Market Cap:{fmt_market_cap(quote.market_cap)}\n"
+        f"P/E Ratio:{fmt(quote.trailing_pe)}\n"
+        f"52W High:{fmt(quote.week_52_high, prefix='$')}\n"
+        f"52W Low:{fmt(quote.week_52_low, prefix='$')}\n"
+        f"30D Change:{fmt_change(snapshot.price_change_30d)}"
     )
     await message.reply_text(reply)
     logger.info("response_sent")
@@ -129,7 +130,7 @@ async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await message.reply_text(f"Analyzing {symbol}....this may take few seconds")
 
     try:
-        data = await fetch_ticker(symbol)
+        snapshot = await fetch_ticker(symbol)
 
     except SigmaError as e:
         logger.warning("request_failed", error_type=type(e).__name__, error=str(e))
@@ -142,7 +143,7 @@ async def analyze_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     try:
-        analysis = await analyze_ticker(data)
+        analysis = await analyze_ticker(snapshot)
 
     except SigmaError as e:
         # analyze_ticker now raises LLMError subclasses, which SigmaError covers.

@@ -5,6 +5,7 @@ import pytest
 from telegram import Chat, Message, MessageEntity, Update, User
 
 from sigma.bot import price_handler
+from tests.fakes import fake_snapshot
 
 
 def _command_message(**kwargs) -> Message:
@@ -28,7 +29,7 @@ def _ctx():
 def stub_bot(monkeypatch):
     replies = AsyncMock()
     monkeypatch.setattr(Message, "reply_text", replies)
-    monkeypatch.setattr("sigma.bot.fetch_ticker", AsyncMock(return_value={"symbol": "AAPL"}))
+    monkeypatch.setattr("sigma.bot.fetch_ticker", AsyncMock(return_value=fake_snapshot()))
     return replies
 
 

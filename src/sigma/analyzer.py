@@ -7,6 +7,7 @@ from google.genai import errors as genai_errors
 from google.genai import types
 
 from sigma.config import get_settings
+from sigma.domain import TickerSnapshot
 from sigma.exceptions import (
     LLMAuthError,
     LLMError,
@@ -41,7 +42,7 @@ GEN_CONFIG = types.GenerateContentConfig(
 )
 
 
-async def _call_gemini_with_retry(prompt: str, max_retries: int | None = None):
+async def _call_gemini_with_retry(prompt: str, max_retries: int | None = None) -> str | None:
     settings = get_settings()
     max_retries = max_retries or settings.llm_max_retries
     gen_config = types.GenerateContentConfig(
@@ -86,66 +87,75 @@ async def _call_gemini_with_retry(prompt: str, max_retries: int | None = None):
             )
         return response.text
 
+    # Unreachable while max_retries >= 1, which Settings enforces. Annotating the
+    # return type is what surfaced the path at all: without it, a zero-iteration
+    # loop returned None to a caller that expects a string.
+    raise LLMError("gemini retry loop ended without a response")
 
-def _build_prompt(data: dict) -> str:
-    def fmt(value, prefix="", suffix="", decimals=2):
+
+def _build_prompt(snapshot: TickerSnapshot) -> str:
+    def fmt(
+        value: float | int | None, prefix: str = "", suffix: str = "", decimals: int = 2
+    ) -> str:
         if value is None:
             return "N/A"
         if isinstance(value, float):
             return f"{prefix}{value:.{decimals}f}{suffix}"
-        if isinstance(value, int):
-            return f"{prefix}{value:,}{suffix}"
-        return f"{prefix}{value}{suffix}"
+        return f"{prefix}{value:,}{suffix}"
 
-    market_cap = data.get("market_cap")
+    quote = snapshot.quote
+    profile = snapshot.profile
 
-    if market_cap and market_cap >= 1_000_000_000_000:
+    market_cap = quote.market_cap
+    if market_cap is None:
+        market_cap_str = "N/A"
+    elif market_cap >= 1_000_000_000_000:
         market_cap_str = f"{market_cap / 1_000_000_000_000:.2f}T"
-    elif market_cap and market_cap >= 1_000_000_000:
+    elif market_cap >= 1_000_000_000:
         market_cap_str = f"{market_cap / 1_000_000_000:.2f}B"
     else:
         market_cap_str = fmt(market_cap, prefix="$")
 
-    price_change = data.get("price_change_30d")
-    if price_change is not None and price_change > 0:
-        price_change_str = f"+{price_change:.2f}%"
-    elif price_change is not None:
-        price_change_str = f"{price_change:.2f}%"
-    else:
+    change = snapshot.price_change_30d
+    if change is None:
         price_change_str = "N/A"
+    else:
+        price_change_str = f"+{change:.2f}%" if change > 0 else f"{change:.2f}%"
 
-    return f"""You are a senior financial analyst. Analyze the following market data for {data.get("symbol")} ({data.get("company_name", "Unknown")}).
+    # `or "Unknown"`, not dict.get(key, "Unknown"): the key was always present and
+    # always None, so the default never fired and the prompt read "Sector: None".
+    return f"""You are a senior financial analyst. Analyze the following market data for {snapshot.symbol} ({profile.name or "Unknown"}).
 === MARKET DATA ===
-Sector: {data.get("sector", "N/A")}
-Industry: {data.get("industry", "N/A")}
-Current Price: {fmt(data.get("current_price"), prefix="$")}
+Sector: {profile.sector or "N/A"}
+Industry: {profile.industry or "N/A"}
+Current Price: {fmt(quote.price, prefix="$")}
 Market Cap: {market_cap_str}
-P/E Ratio (Trailing): {fmt(data.get("trailing_pe"))}
-P/E Ratio (Forward): {fmt(data.get("forward_pe"))}
-Price-to-Book: {fmt(data.get("price_to_book"))}
-52-Week High: {fmt(data.get("week_52_high"), prefix="$")}
-52-Week Low: {fmt(data.get("week_52_low"), prefix="$")}
-Today's Volume: {fmt(data.get("volume"))}
-Average Volume (90d): {fmt(data.get("avg_volume"))}
-Beta: {fmt(data.get("beta"))}
-Dividend Yield: {fmt(data.get("dividend_yield"), suffix="%", decimals=4) if data.get("dividend_yield") else "N/A"}
+P/E Ratio (Trailing): {fmt(quote.trailing_pe)}
+P/E Ratio (Forward): {fmt(quote.forward_pe)}
+Price-to-Book: {fmt(quote.price_to_book)}
+52-Week High: {fmt(quote.week_52_high, prefix="$")}
+52-Week Low: {fmt(quote.week_52_low, prefix="$")}
+Today's Volume: {fmt(quote.volume)}
+Average Volume (90d): {fmt(quote.avg_volume)}
+Beta: {fmt(quote.beta)}
+Dividend Yield: {fmt(quote.dividend_yield, suffix="%", decimals=4)}
 30-Day Price Change: {price_change_str}
 
 Provide a structured analysis covering:
-1. Valuation — is the stock cheap, fair, or expensive based on available metrics?
-2. Key Risks — maximum 3 bullet points
-3. Short-term Outlook — based on price trend and volume
+1. Valuation - is the stock cheap, fair, or expensive based on available metrics?
+2. Key Risks - maximum 3 bullet points
+3. Short-term Outlook - based on price trend and volume
 
-Be concise. Do not give buy or sell recommendations. If a metric shows N/A, skip it and work with what is available.\n\n
+Be concise. Do not give buy or sell recommendations. If a metric shows N/A, skip it and work with what is available.
+
 Format your response using Telegram Markdown: use *text* for bold (not **text**), use - for bullet points. No headers with #."""
 
 
-async def analyze_ticker(data: dict) -> str:
-    symbol = data.get("symbol", "UNKNOWN")
-    log = logger.bind(ticker=symbol)
+async def analyze_ticker(snapshot: TickerSnapshot) -> str:
+    log = logger.bind(ticker=snapshot.symbol)
 
     log.info("analyzer_started")
-    prompt = _build_prompt(data)
+    prompt = _build_prompt(snapshot)
     log.debug("prompt_built", char_length=len(prompt))
 
     analysis = await _call_gemini_with_retry(prompt)
@@ -165,7 +175,7 @@ if __name__ == "__main__":
 
     setup_logging(_gs())
 
-    async def test():
+    async def test() -> None:
         data = await fetch_ticker("AAPL")
         analysis = await analyze_ticker(data)
         print("\n---------ANalysis---------------")
