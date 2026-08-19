@@ -164,21 +164,3 @@ async def analyze_ticker(snapshot: TickerSnapshot) -> str:
         raise LLMInvalidResponse("Gemini returned no Text")
     log.info("analyzer_complete", response_length=len(analysis))
     return analysis
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    from sigma.config import get_settings as _gs
-    from sigma.fetcher import fetch_ticker
-    from sigma.logging import setup_logging
-
-    setup_logging(_gs())
-
-    async def test() -> None:
-        data = await fetch_ticker("AAPL")
-        analysis = await analyze_ticker(data)
-        print("\n---------ANalysis---------------")
-        print(analysis)
-
-    asyncio.run(test())
