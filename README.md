@@ -23,10 +23,12 @@ a short-term outlook.
 ## Features
 
 - Global tickers, including exchange suffixes (`RELIANCE.NS`, `SAP.DE`)
+- The whole NSE and BSE corporate-action calendar in two requests, stored and
+  re-fetchable without duplicates
 - JSON logging with a correlation ID per request and credential redaction
 - Typed configuration validated at startup
 - Missing data renders as `N/A`, never as zero
-- Single container, no inbound ports, no database
+- Single container, no inbound ports
 
 ## Commands
 
@@ -84,12 +86,25 @@ Unknown variables fail at startup.
 ## Architecture
 
 ```
-Telegram ──▶ bot.py ──▶ fetcher.py ──▶ Yahoo Finance
-                   └──▶ analyzer.py ─▶ Gemini
+                         ┌─ providers/yahoo ──────▶ Yahoo Finance
+Telegram ─▶ bot.py ──────┤     (MarketDataProvider)
+                         └─ analyzer.py ──────────▶ Gemini
+
+           composition.py  ─ the only module that names an implementation
+
+           providers/corpactions ──▶ NSE + BSE bulk calendars
+                    │  (CorporateActionProvider)
+                    └──▶ store/ ──▶ SQLite on the data volume
 ```
 
-Vendor errors are translated at the provider boundary, so `bot.py` handles one
-exception type and imports no provider SDK.
+`bot.py` depends on `typing.Protocol` interfaces and receives its collaborators
+through its constructor, so it imports no vendor SDK - not even transitively.
+Vendor errors are translated at each provider boundary into one exception
+hierarchy.
+
+Yahoo answers one ticker per request; the exchange calendars answer every
+company at once. That difference is why market-wide event coverage is two
+requests rather than thousands.
 
 ## Development
 
