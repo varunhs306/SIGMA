@@ -8,6 +8,7 @@ license = { file = "LICENSE" }
 dependencies = [
     "google-api-core>=2.34.0",
     "google-genai>=1.65,<2",
+    "httpx>=0.28,<0.29",
     "numpy>=2.4,<3",
     "pandas>=3.0,<4",
     "pydantic>=2.12,<3",

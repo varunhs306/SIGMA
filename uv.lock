@@ -1406,6 +1406,7 @@ source = { editable = "." }
 dependencies = [
     { name = "google-api-core" },
     { name = "google-genai" },
+    { name = "httpx" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pydantic" },
@@ -1430,6 +1431,7 @@ dev = [
 requires-dist = [
     { name = "google-api-core", specifier = ">=2.34.0" },
     { name = "google-genai", specifier = ">=1.65,<2" },
+    { name = "httpx", specifier = ">=0.28,<0.29" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.3.0" },
     { name = "numpy", specifier = ">=2.4,<3" },
     { name = "pandas", specifier = ">=3.0,<4" },
