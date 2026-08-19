@@ -26,10 +26,12 @@ def _normalise_symbol(value: Any) -> Any:
 
 
 # 20 characters, not 10: "RELIANCE.NS" is 11 and the old fetcher regex rejected it.
+# '&' joined the class on Day 08b: NSE lists GVT&D, and a ticker the regex
+# rejects is a company that silently vanishes from a market-wide feed.
 Symbol = Annotated[
     str,
     BeforeValidator(_normalise_symbol),
-    StringConstraints(pattern=r"^[A-Z0-9.\-^]{1,20}$"),
+    StringConstraints(pattern=r"^[A-Z0-9.\-^&]{1,20}$"),
 ]
 
 # allow_inf_nan=False is the load-bearing part. Pydantic accepts nan and inf as
@@ -46,6 +48,21 @@ class DomainModel(BaseModel):
     # frozen: a snapshot is a fact about a moment, and facts do not get edited.
     # extra: a mistyped keyword is a failure here, not a field silently dropped.
     model_config = ConfigDict(frozen=True, extra="forbid")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_computed_fields(cls, data: Any) -> Any:
+        """Let a model read back what it wrote.
+
+        model_dump_json() emits computed fields; extra='forbid' then rejects
+        them on the way in, so every model here was unable to parse its own
+        serialised form. A computed field is output-only by definition, so the
+        right move is to ignore it on input rather than to loosen 'forbid' for
+        every other key.
+        """
+        if isinstance(data, dict) and cls.model_computed_fields:
+            return {k: v for k, v in data.items() if k not in cls.model_computed_fields}
+        return data
 
 
 class PriceBar(DomainModel):

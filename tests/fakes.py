@@ -1,6 +1,15 @@
 import datetime as dt
 
-from sigma.domain import CompanyProfile, PriceBar, Quote, TickerSnapshot
+from sigma.domain import (
+    CompanyProfile,
+    CorporateAction,
+    EventDetail,
+    EventType,
+    Exchange,
+    PriceBar,
+    Quote,
+    TickerSnapshot,
+)
 
 FAKE_BOT_ID = "1111111111"
 
@@ -42,3 +51,26 @@ def fake_snapshot(
         quote=Quote(symbol=symbol, price=110.0, **quote_fields),  # type: ignore[arg-type]
         bars=fake_bars(closes),
     )
+
+
+def fake_action(
+    exchange: Exchange = Exchange.NSE,
+    symbol: str = "EMKAY",
+    *,
+    detail: EventDetail | None = None,
+    ex_date: dt.date = dt.date(2026, 8, 20),
+    raw: str = "Dividend - Rs 2 Per Share",
+    **overrides: object,
+) -> CorporateAction:
+    """A valid corporate action. The ticker follows the exchange, as it must."""
+    fields: dict[str, object] = {
+        "exchange": exchange,
+        "symbol": symbol,
+        "ticker": f"{symbol}{exchange.suffix}",
+        "company": "Emkay Global Financial Services Limited",
+        "detail": detail or EventDetail(type=EventType.DIVIDEND, amount=2.0),
+        "ex_date": ex_date,
+        "record_date": ex_date,
+        "raw": raw,
+    }
+    return CorporateAction.model_validate(fields | overrides)
