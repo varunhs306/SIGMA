@@ -1,0 +1,256 @@
+{
+  "bars": [
+    {
+      "close": 125.875,
+      "date": "2026-07-20",
+      "high": 139.4499969482422,
+      "low": 110.75,
+      "open": 127.5250015258789,
+      "volume": 137046
+    },
+    {
+      "close": 127.6500015258789,
+      "date": "2026-07-21",
+      "high": 128.97500610351562,
+      "low": 120.17500305175781,
+      "open": 128.97500610351562,
+      "volume": 59596
+    },
+    {
+      "close": 127.9000015258789,
+      "date": "2026-07-22",
+      "high": 128.25,
+      "low": 123.25,
+      "open": 127.4749984741211,
+      "volume": 20910
+    },
+    {
+      "close": 122.9000015258789,
+      "date": "2026-07-23",
+      "high": 126.9749984741211,
+      "low": 116.0250015258789,
+      "open": 126.9749984741211,
+      "volume": 13602
+    },
+    {
+      "close": 126.7249984741211,
+      "date": "2026-07-24",
+      "high": 127.2249984741211,
+      "low": 120.5250015258789,
+      "open": 122.4000015258789,
+      "volume": 5704
+    },
+    {
+      "close": 127.32499694824219,
+      "date": "2026-07-27",
+      "high": 129.5,
+      "low": 122.5,
+      "open": 126.5,
+      "volume": 13950
+    },
+    {
+      "close": 123.55000305175781,
+      "date": "2026-07-28",
+      "high": 127.5,
+      "low": 122.5250015258789,
+      "open": 127.5,
+      "volume": 7998
+    },
+    {
+      "close": 120.0999984741211,
+      "date": "2026-07-29",
+      "high": 127.4000015258789,
+      "low": 117.5,
+      "open": 127.4000015258789,
+      "volume": 8502
+    },
+    {
+      "close": 123.92500305175781,
+      "date": "2026-07-30",
+      "high": 127.4000015258789,
+      "low": 121.5999984741211,
+      "open": 123.9749984741211,
+      "volume": 7802
+    },
+    {
+      "close": 123.7249984741211,
+      "date": "2026-07-31",
+      "high": 123.92500305175781,
+      "low": 120.0,
+      "open": 123.92500305175781,
+      "volume": 6536
+    },
+    {
+      "close": 132.4250030517578,
+      "date": "2026-08-03",
+      "high": 135.0,
+      "low": 124.4749984741211,
+      "open": 124.5,
+      "volume": 82534
+    },
+    {
+      "close": 143.875,
+      "date": "2026-08-04",
+      "high": 148.6999969482422,
+      "low": 133.0,
+      "open": 135.5,
+      "volume": 164960
+    },
+    {
+      "close": 150.8249969482422,
+      "date": "2026-08-05",
+      "high": 162.5,
+      "low": 146.77499389648438,
+      "open": 150.0,
+      "volume": 1161654
+    },
+    {
+      "close": 154.625,
+      "date": "2026-08-06",
+      "high": 156.5,
+      "low": 152.60000610351562,
+      "open": 152.60000610351562,
+      "volume": 285306
+    },
+    {
+      "close": 155.3000030517578,
+      "date": "2026-08-07",
+      "high": 169.0,
+      "low": 155.0,
+      "open": 158.89999389648438,
+      "volume": 191476
+    },
+    {
+      "close": 155.3000030517578,
+      "date": "2026-08-10",
+      "high": 158.5,
+      "low": 155.1999969482422,
+      "open": 158.0,
+      "volume": 118554
+    },
+    {
+      "close": 155.1999969482422,
+      "date": "2026-08-11",
+      "high": 157.0,
+      "low": 154.9499969482422,
+      "open": 156.0,
+      "volume": 184773
+    },
+    {
+      "close": 161.5,
+      "date": "2026-08-12",
+      "high": 163.9499969482422,
+      "low": 155.10000610351562,
+      "open": 155.25,
+      "volume": 270050
+    },
+    {
+      "close": 161.89999389648438,
+      "date": "2026-08-13",
+      "high": 166.0,
+      "low": 161.0,
+      "open": 166.0,
+      "volume": 81185
+    },
+    {
+      "close": 162.6999969482422,
+      "date": "2026-08-14",
+      "high": 164.0,
+      "low": 162.1999969482422,
+      "open": 162.1999969482422,
+      "volume": 64010
+    },
+    {
+      "close": 166.85000610351562,
+      "date": "2026-08-17",
+      "high": 170.0,
+      "low": 163.35000610351562,
+      "open": 163.4499969482422,
+      "volume": 139240
+    },
+    {
+      "close": 169.10000610351562,
+      "date": "2026-08-18",
+      "high": 171.8000030517578,
+      "low": 167.39999389648438,
+      "open": 169.9499969482422,
+      "volume": 49218
+    },
+    {
+      "close": 169.1999969482422,
+      "date": "2026-08-19",
+      "high": 172.8000030517578,
+      "low": 169.10000610351562,
+      "open": 169.8000030517578,
+      "volume": 65699
+    }
+  ],
+  "info": {
+    "averageDailyVolume10Day": 1135,
+    "averageDailyVolume3Month": 3577,
+    "bookValue": 33.162,
+    "corporateActions": [],
+    "cryptoTradeable": false,
+    "currency": "INR",
+    "customPriceAlertConfidence": "NONE",
+    "earningsTimestampEnd": 1731495540,
+    "earningsTimestampStart": 1731495540,
+    "epsTrailingTwelveMonths": 0.6,
+    "esgPopulated": false,
+    "exchange": "BSE",
+    "exchangeDataDelayedBy": 15,
+    "exchangeTimezoneName": "Asia/Kolkata",
+    "exchangeTimezoneShortName": "IST",
+    "fiftyDayAverage": 205.78,
+    "fiftyDayAverageChange": -47.33,
+    "fiftyDayAverageChangePercent": -0.23000292,
+    "fiftyTwoWeekChangePercent": 174.70004,
+    "fiftyTwoWeekHigh": 308.5,
+    "fiftyTwoWeekHighChange": -150.05,
+    "fiftyTwoWeekHighChangePercent": -0.48638573,
+    "fiftyTwoWeekLow": 49.12,
+    "fiftyTwoWeekLowChange": 109.33,
+    "fiftyTwoWeekLowChangePercent": 2.2257738,
+    "fiftyTwoWeekRange": "49.12 - 308.5",
+    "financialCurrency": "INR",
+    "firstTradeDateMilliseconds": 946871100000,
+    "fullExchangeName": "BSE",
+    "fulldayPrice": 158.45,
+    "gmtOffSetMilliseconds": 19800000,
+    "hasPrePostMarketData": false,
+    "impliedSharesOutstanding": 24661100,
+    "isEarningsDateEstimate": false,
+    "language": "en-US",
+    "market": "in_market",
+    "marketCap": 3907551232,
+    "marketState": "PREPRE",
+    "messageBoardId": "finmb_21989739",
+    "priceHint": 2,
+    "priceToBook": 4.7780595,
+    "quoteSourceName": "Delayed Quote",
+    "quoteType": "MUTUALFUND",
+    "region": "US",
+    "regularMarketChange": 2.5999908,
+    "regularMarketChangePercent": 1.6682649,
+    "regularMarketPreviousClose": 155.85,
+    "regularMarketPrice": 158.45,
+    "regularMarketTime": 1721764800,
+    "sharesOutstanding": 24480700,
+    "shortName": "531910.BO,0P0000BRKR,244",
+    "sourceInterval": 10,
+    "symbol": "531910.BO",
+    "tradeable": false,
+    "trailingAnnualDividendRate": 0.0,
+    "trailingAnnualDividendYield": 0.0,
+    "trailingPE": 264.0833,
+    "trailingPegRatio": null,
+    "triggerable": false,
+    "twoHundredDayAverage": 143.53085,
+    "twoHundredDayAverageChange": 14.919144,
+    "twoHundredDayAverageChangePercent": 0.10394381,
+    "typeDisp": "Fund"
+  },
+  "recorded_at": "2026-08-20T21:35:23+00:00",
+  "source": "yfinance Ticker(symbol).info + Ticker(symbol).history()",
+  "symbol": "531910.BO"
+}

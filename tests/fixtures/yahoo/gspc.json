@@ -1,0 +1,264 @@
+{
+  "bars": [
+    {
+      "close": 7509.2001953125,
+      "date": "2026-07-21",
+      "high": 7515.31005859375,
+      "low": 7467.85986328125,
+      "open": 7489.9501953125,
+      "volume": 5149030000
+    },
+    {
+      "close": 7498.9599609375,
+      "date": "2026-07-22",
+      "high": 7525.93994140625,
+      "low": 7485.85009765625,
+      "open": 7497.47021484375,
+      "volume": 4890390000
+    },
+    {
+      "close": 7408.2998046875,
+      "date": "2026-07-23",
+      "high": 7450.1201171875,
+      "low": 7376.0,
+      "open": 7418.2900390625,
+      "volume": 5515210000
+    },
+    {
+      "close": 7411.97998046875,
+      "date": "2026-07-24",
+      "high": 7460.97998046875,
+      "low": 7396.52978515625,
+      "open": 7406.2998046875,
+      "volume": 4860620000
+    },
+    {
+      "close": 7413.18017578125,
+      "date": "2026-07-27",
+      "high": 7480.56982421875,
+      "low": 7382.740234375,
+      "open": 7464.2001953125,
+      "volume": 5038290000
+    },
+    {
+      "close": 7428.77978515625,
+      "date": "2026-07-28",
+      "high": 7452.08984375,
+      "low": 7382.9501953125,
+      "open": 7395.5498046875,
+      "volume": 5590890000
+    },
+    {
+      "close": 7316.14990234375,
+      "date": "2026-07-29",
+      "high": 7450.83984375,
+      "low": 7313.919921875,
+      "open": 7418.16015625,
+      "volume": 5836350000
+    },
+    {
+      "close": 7437.6298828125,
+      "date": "2026-07-30",
+      "high": 7448.75,
+      "low": 7370.97998046875,
+      "open": 7390.4501953125,
+      "volume": 5594430000
+    },
+    {
+      "close": 7489.72021484375,
+      "date": "2026-07-31",
+      "high": 7512.0400390625,
+      "low": 7399.830078125,
+      "open": 7462.1298828125,
+      "volume": 5391020000
+    },
+    {
+      "close": 7600.5,
+      "date": "2026-08-03",
+      "high": 7610.0400390625,
+      "low": 7504.77978515625,
+      "open": 7504.77978515625,
+      "volume": 5201470000
+    },
+    {
+      "close": 7736.52001953125,
+      "date": "2026-08-04",
+      "high": 7758.2099609375,
+      "low": 7629.10009765625,
+      "open": 7630.6201171875,
+      "volume": 5906940000
+    },
+    {
+      "close": 7723.5498046875,
+      "date": "2026-08-05",
+      "high": 7793.68017578125,
+      "low": 7720.169921875,
+      "open": 7771.6201171875,
+      "volume": 5615640000
+    },
+    {
+      "close": 7709.9599609375,
+      "date": "2026-08-06",
+      "high": 7742.85009765625,
+      "low": 7698.14990234375,
+      "open": 7713.7900390625,
+      "volume": 5330830000
+    },
+    {
+      "close": 7757.64013671875,
+      "date": "2026-08-07",
+      "high": 7763.080078125,
+      "low": 7719.18994140625,
+      "open": 7735.18017578125,
+      "volume": 5019970000
+    },
+    {
+      "close": 7753.10986328125,
+      "date": "2026-08-10",
+      "high": 7773.759765625,
+      "low": 7743.10986328125,
+      "open": 7751.740234375,
+      "volume": 4879540000
+    },
+    {
+      "close": 7728.2001953125,
+      "date": "2026-08-11",
+      "high": 7767.509765625,
+      "low": 7717.25,
+      "open": 7767.509765625,
+      "volume": 4739500000
+    },
+    {
+      "close": 7748.5,
+      "date": "2026-08-12",
+      "high": 7766.009765625,
+      "low": 7737.9501953125,
+      "open": 7765.4599609375,
+      "volume": 4574170000
+    },
+    {
+      "close": 7798.990234375,
+      "date": "2026-08-13",
+      "high": 7816.7001953125,
+      "low": 7763.18017578125,
+      "open": 7763.18017578125,
+      "volume": 4833230000
+    },
+    {
+      "close": 7785.759765625,
+      "date": "2026-08-14",
+      "high": 7810.009765625,
+      "low": 7776.31005859375,
+      "open": 7806.60009765625,
+      "volume": 4159900000
+    },
+    {
+      "close": 7745.06005859375,
+      "date": "2026-08-17",
+      "high": 7790.68017578125,
+      "low": 7744.8798828125,
+      "open": 7790.68017578125,
+      "volume": 4452630000
+    },
+    {
+      "close": 7691.759765625,
+      "date": "2026-08-18",
+      "high": 7713.9501953125,
+      "low": 7688.6298828125,
+      "open": 7700.0400390625,
+      "volume": 4602700000
+    },
+    {
+      "close": 7707.97998046875,
+      "date": "2026-08-19",
+      "high": 7743.93017578125,
+      "low": 7700.06982421875,
+      "open": 7716.740234375,
+      "volume": 5184100000
+    },
+    {
+      "close": 7641.16015625,
+      "date": "2026-08-20",
+      "high": 7699.9599609375,
+      "low": 7639.009765625,
+      "open": 7690.490234375,
+      "volume": 2706581000
+    }
+  ],
+  "info": {
+    "52WeekChange": 21.001171,
+    "allTimeHigh": 7816.7,
+    "allTimeLow": 4.4,
+    "ask": 7815.33,
+    "askSize": 0,
+    "averageDailyVolume10Day": 4777657000,
+    "averageDailyVolume3Month": 5461156935,
+    "averageVolume": 5461156935,
+    "averageVolume10days": 4777657000,
+    "bid": 7748.77,
+    "bidSize": 0,
+    "corporateActions": [],
+    "cryptoTradeable": false,
+    "currency": "USD",
+    "customPriceAlertConfidence": "HIGH",
+    "dayHigh": 7699.96,
+    "dayLow": 7639.01,
+    "esgPopulated": false,
+    "exchange": "SNP",
+    "exchangeDataDelayedBy": 0,
+    "exchangeTimezoneName": "America/New_York",
+    "exchangeTimezoneShortName": "EDT",
+    "fiftyDayAverage": 7527.8096,
+    "fiftyDayAverageChange": 113.350586,
+    "fiftyDayAverageChangePercent": 0.015057579,
+    "fiftyTwoWeekChangePercent": 21.001171,
+    "fiftyTwoWeekHigh": 7816.7,
+    "fiftyTwoWeekHighChange": -175.54004,
+    "fiftyTwoWeekHighChangePercent": -0.022457052,
+    "fiftyTwoWeekLow": 6316.91,
+    "fiftyTwoWeekLowChange": 1324.25,
+    "fiftyTwoWeekLowChangePercent": 0.20963572,
+    "fiftyTwoWeekRange": "6316.91 - 7816.7",
+    "firstTradeDateMilliseconds": -1325583000000,
+    "fullExchangeName": "SNP",
+    "fulldayPrice": 7641.16,
+    "gmtOffSetMilliseconds": -14400000,
+    "hasPrePostMarketData": false,
+    "language": "en-US",
+    "longName": "S&P 500",
+    "market": "us_market",
+    "marketState": "POST",
+    "maxAge": 86400,
+    "messageBoardId": "finmb_INDEXGSPC",
+    "open": 7690.49,
+    "previousClose": 7707.98,
+    "priceHint": 2,
+    "quoteSourceName": "Delayed Quote",
+    "quoteType": "INDEX",
+    "region": "US",
+    "regularMarketChange": -66.819824,
+    "regularMarketChangePercent": -0.8668915,
+    "regularMarketDayHigh": 7699.96,
+    "regularMarketDayLow": 7639.01,
+    "regularMarketDayRange": "7639.01 - 7699.96",
+    "regularMarketOpen": 7690.49,
+    "regularMarketPreviousClose": 7707.98,
+    "regularMarketPrice": 7641.16,
+    "regularMarketTime": 1787260233,
+    "regularMarketVolume": 2706581000,
+    "shortName": "S&P 500",
+    "sourceInterval": 15,
+    "symbol": "^GSPC",
+    "tradeable": false,
+    "trailingPegRatio": null,
+    "triggerable": true,
+    "twoHundredDayAverage": 7087.6074,
+    "twoHundredDayAverageChange": 553.55273,
+    "twoHundredDayAverageChangePercent": 0.07810149,
+    "typeDisp": "Index",
+    "volume": 2706581000
+  },
+  "recorded_at": "2026-08-20T21:35:23+00:00",
+  "source": "yfinance Ticker(symbol).info + Ticker(symbol).history()",
+  "symbol": "^GSPC"
+}
