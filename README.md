@@ -116,9 +116,22 @@ uv run pre-commit install
 | Task | Command |
 |---|---|
 | Tests | `uv run pytest -q` |
-| Lint | `uv run ruff check src/ tests/` |
-| Format | `uv run ruff format src/ tests/` |
-| Type check | `uv run mypy src/sigma/` |
+| Lint | `uv run ruff check src/ tests/ scripts/` |
+| Format | `uv run ruff format src/ tests/ scripts/` |
+| Type check | `uv run mypy src/sigma/ scripts/` |
+| Re-record fixtures | `uv run python scripts/record_fixtures.py --all` |
+| Live endpoint check | `uv run pytest -m network` |
+
+### Tests never touch the network
+
+The suite replays payloads recorded from the real endpoints into
+[tests/fixtures/](tests/fixtures), and a guard in `conftest.py` raises
+`NetworkAccessDenied` if a test resolves a hostname or opens a connection. The
+guard patches both `socket` and `curl_cffi`, because yfinance goes through
+libcurl and never touches Python's socket module.
+
+One test is exempt, marked `network`, and deselected by default. It checks the
+live endpoints still answer the shape the fixtures were recorded from.
 
 ## License
 
