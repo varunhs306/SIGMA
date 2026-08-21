@@ -26,11 +26,11 @@ jobs:
 
       - run: uv sync --frozen --extra dev
 
-      - run: uv run ruff check --output-format=github src/ tests/
+      - run: uv run ruff check --output-format=github src/ tests/ scripts/
 
-      - run: uv run ruff format --check src/ tests/
+      - run: uv run ruff format --check src/ tests/ scripts/
 
-      - run: uv run mypy src/sigma/
+      - run: uv run mypy src/sigma/ scripts/
 
       - run: uv run pytest -q
 

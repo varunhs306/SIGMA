@@ -43,11 +43,21 @@ artifacts = ["src/sigma/py.typed"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# The guard in conftest.py denies the network to every test. This marker is the
+# only way past it, and --strict-markers is what stops a typo from silently
+# granting the exemption to nothing.
+# -m 'not network' is the default selection, so the opt-in test is opt-in by
+# omission rather than by everyone remembering. A -m on the command line replaces
+# this one, which is how `pytest -m network` reaches it.
+addopts = "--strict-markers -m 'not network'"
+markers = [
+    "network: hits a real endpoint; deselected by default, run with -m network",
+]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["src", "tests"]
+src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "S", "RUF"]
@@ -61,7 +71,7 @@ docstring-code-format = true
 
 [tool.mypy]
 python_version = "3.12"
-files = ["src/sigma"]
+files = ["src/sigma", "scripts"]
 plugins = ["pydantic.mypy"]
 # Day 06 deferred this: strict was out of reach while the fetcher returned a bare
 # dict. Killing the dict left two missing annotations, so the ratchet closes.
@@ -70,5 +80,5 @@ warn_unreachable = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["yfinance.*", "telegramify_markdown.*"]
+module = ["yfinance.*", "telegramify_markdown.*", "curl_cffi.*"]
 ignore_missing_imports = true
